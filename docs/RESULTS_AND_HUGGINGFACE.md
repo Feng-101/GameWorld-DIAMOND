@@ -1,13 +1,29 @@
 # 训练结果保留与 Hugging Face 发布
 
+公开模型仓库：
+
+<https://huggingface.co/FCZ7/gameworld-diamond-breakout-level5>
+
+任何人均可直接下载最终 checkpoint：
+
+```bash
+python -m pip install -U huggingface_hub
+hf download FCZ7/gameworld-diamond-breakout-level5 \
+  agent_epoch_01000.pt \
+  --local-dir checkpoints/level5_f4
+```
+
+下载后仍须核验第 2 节给出的 SHA-256。完整真实环境视频推理命令见
+`INFERENCE_VIDEO.md`。
+
 ## 1. 服务器上要找的准确 run
 
 ```bash
 RUN=/home/scc/pb23611950/GameWorld_DIAMOND/diamond/results/atari_v9_level5_20260721_163502
 ```
 
-本地下载中缺少整个 `diamond/results`，因此最终模型目前**不在 handoff 文件夹中**。
-至少需要从服务器补回下列文件。
+本地交接目录没有整个 `diamond/results`；公开推理所需的最终模型可从上述 Hugging
+Face 仓库下载。若要保存训练证据或精确续训，仍需从服务器补回下列 run 文件。
 
 ## 2. Hugging Face 模型仓库的最低必要文件
 

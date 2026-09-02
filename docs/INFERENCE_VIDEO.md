@@ -21,15 +21,51 @@ diamond/src/integrations/gameworld/atari_rpc_client.py          # recording clie
 diamond/src/evaluate_gameworld_atari_agent_60hz.py              # policy + MP4
 ```
 
-## 1. 准备模型
+## 1. 从 Hugging Face 下载最终模型
 
-把服务器文件放到任意路径，例如：
+最终 Epoch 1000 checkpoint 已公开在：
 
-```text
-checkpoints/level5_f4/agent_epoch_01000.pt
+<https://huggingface.co/FCZ7/gameworld-diamond-breakout-level5>
+
+安装当前 Hugging Face CLI：
+
+```bash
+python -m pip install -U huggingface_hub
 ```
 
-准确服务器来源见 `RESULTS_AND_HUGGINGFACE.md`。
+该仓库为 public，下载不要求登录。Linux：
+
+```bash
+export ROOT=/path/to/GameWorld_DIAMOND
+mkdir -p "$ROOT/checkpoints/level5_f4"
+hf download FCZ7/gameworld-diamond-breakout-level5 \
+  agent_epoch_01000.pt \
+  --local-dir "$ROOT/checkpoints/level5_f4"
+export CHECKPOINT="$ROOT/checkpoints/level5_f4/agent_epoch_01000.pt"
+sha256sum "$CHECKPOINT"
+```
+
+Windows PowerShell：
+
+```powershell
+$env:ROOT = "D:\path\to\GameWorld_DIAMOND"
+New-Item -ItemType Directory -Force `
+  "$env:ROOT\checkpoints\level5_f4" | Out-Null
+hf download FCZ7/gameworld-diamond-breakout-level5 `
+  agent_epoch_01000.pt `
+  --local-dir "$env:ROOT\checkpoints\level5_f4"
+$CHECKPOINT = "$env:ROOT\checkpoints\level5_f4\agent_epoch_01000.pt"
+Get-FileHash -Algorithm SHA256 -LiteralPath $CHECKPOINT
+```
+
+正确文件大小为 54,309,858 bytes，SHA-256 必须是：
+
+```text
+cd45e24de20b9e7c1b52a52af08479c0a946d2187800c2d31ca7a6ed1bfd6244
+```
+
+若校验不一致，不要继续推理。checkpoint 的服务器来源和组成见
+`RESULTS_AND_HUGGINGFACE.md`。
 
 ## 2. 启动专用浏览器服务
 
@@ -68,7 +104,7 @@ python -m pip install "tornado>=6.1,<7"
 conda activate gw-diamond
 cd "$ROOT/diamond"
 python src/evaluate_gameworld_atari_agent_60hz.py \
-  --checkpoint /path/to/agent_epoch_01000.pt \
+  --checkpoint "$CHECKPOINT" \
   --endpoint tcp://127.0.0.1:5675 \
   --level 5 \
   --game-seed 4242 \
@@ -97,7 +133,7 @@ Linux：
 ```bash
 for level in 1 2 3 4 5; do
   python src/evaluate_gameworld_atari_agent_60hz.py \
-    --checkpoint /path/to/agent_epoch_01000.pt \
+    --checkpoint "$CHECKPOINT" \
     --endpoint tcp://127.0.0.1:5675 \
     --level "$level" --game-seed 4242 --policy-seed 20260720 \
     --video-codec mp4v \
@@ -110,7 +146,7 @@ PowerShell：
 ```powershell
 1..5 | ForEach-Object {
   python src/evaluate_gameworld_atari_agent_60hz.py `
-    --checkpoint D:\path\agent_epoch_01000.pt `
+    --checkpoint $CHECKPOINT `
     --endpoint tcp://127.0.0.1:5675 `
     --level $_ --game-seed 4242 --policy-seed 20260720 `
     --video-codec mp4v `
@@ -127,7 +163,7 @@ PowerShell：
 
 ```bash
 python src/evaluate_gameworld_atari_agent_60hz.py \
-  --checkpoint /path/to/agent_epoch_01000.pt \
+  --checkpoint "$CHECKPOINT" \
   --level 5 --safety-max-steps 20 --video-codec mp4v
 ```
 
