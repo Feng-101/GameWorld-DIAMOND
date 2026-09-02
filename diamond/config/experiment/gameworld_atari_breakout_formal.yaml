@@ -1,0 +1,52 @@
+# @package _global_
+
+# Formal single-level run using DIAMOND's published Atari training schedule.
+# Environment physics and episode semantics are defined independently in
+# config/env/gameworld_atari_breakout.yaml.
+
+common:
+  seed: 20260720
+
+collection:
+  train:
+    num_steps_total: 100000
+    first_epoch:
+      min: 5000
+      max: 10000
+      threshold_rew: 10
+    steps_per_epoch: 100
+  test:
+    num_episodes: 4
+    num_final_episodes: 100
+
+world_model_env:
+  horizon: 15
+
+denoiser:
+  training:
+    steps_first_epoch: 10000
+    steps_per_epoch: 400
+
+rew_end_model:
+  training:
+    steps_first_epoch: 10000
+    steps_per_epoch: 400
+
+actor_critic:
+  training:
+    steps_first_epoch: 5000
+    steps_per_epoch: 400
+  actor_critic_loss:
+    backup_every: 15
+
+training:
+  num_final_epochs: 50
+  compile_wm: true
+
+checkpointing:
+  save_agent_every: 100
+  num_to_keep: 4
+
+evaluation:
+  should: true
+  every: 10

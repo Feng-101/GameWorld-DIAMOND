@@ -1,0 +1,78 @@
+# @package _global_
+
+# Formal zero-shot layout-generalization experiment:
+#   train layouts: 1, 3, 4 (configured by env/gameworld_breakout.yaml)
+#   held-out layouts: 2, 5
+# Periodic validation uses only levels 1/3/4. Levels 2/5 are reserved for a
+# final blind evaluation and are never constructed by Trainer.
+
+gameworld:
+  # Single source of truth. Override with
+  # gameworld.imagination_horizon=15 for the paired horizon study.
+  imagination_horizon: 10
+
+common:
+  seed: 20260715
+
+collection:
+  train:
+    # Use a fixed 10k random-policy warm-up so the first world-model update
+    # sees all three layouts. The full 160k real-transition budget preserves
+    # ample on-policy collection after that warm-up.
+    num_steps_total: 160000
+    first_epoch:
+      min: 10000
+      max: 10000
+      # A fixed-size multi-layout warm-up is more important here than stopping
+      # as soon as Breakout produces a small number of positive rewards.
+      threshold_rew: 0
+    steps_per_epoch: 100
+  test:
+    # Official DIAMOND uses four periodic test episodes. Six is the smallest
+    # balanced grid for three layouts and two fixed validation seeds.
+    num_episodes: 6
+    num_final_episodes: 6
+
+world_model_env:
+  horizon: ${gameworld.imagination_horizon}
+
+denoiser:
+  training:
+    # The warm-up dataset is twice DIAMOND's usual 5k minimum and spans three
+    # layouts. Increase visual-dynamics fitting by 1.5x, not 2-3x, to avoid
+    # overfitting the still mostly random-policy initial data.
+    steps_first_epoch: 15000
+
+rew_end_model:
+  training:
+    # Reward/end prediction shares most semantics across layouts and therefore
+    # needs a smaller increase than pixel generation.
+    steps_first_epoch: 12000
+
+actor_critic:
+  training:
+    # Do not amplify policy optimization inside the least mature world model.
+    steps_first_epoch: 5000
+  actor_critic_loss:
+    # Keep the actor supervision rollout aligned with the same single knob.
+    backup_every: ${gameworld.imagination_horizon}
+
+training:
+  # 10k initial + 1500 x 100 online steps = 160k real transitions, followed
+  # by the original 50 no-collection optimization epochs (1550 total epochs).
+  num_final_epochs: 50
+  # Compilation is only an optimization. Leave it off for the first formal
+  # run/soak test; it can be enabled after the CUDA/Triton stack is verified.
+  compile_wm: false
+
+checkpointing:
+  # Keep only four scheduled snapshots, one every 100 epochs. Trainer also
+  # forces a final-epoch snapshot when the run ends between cadence points.
+  save_agent_every: 100
+  num_to_keep: 4
+
+evaluation:
+  should: true
+  # Six 100-step validation tasks every 5000 train steps cost at most 12% of
+  # real collection and never access held-out Level 2/5.
+  every: 50

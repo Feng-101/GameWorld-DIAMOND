@@ -1,0 +1,50 @@
+kind: gameworld_breakout
+protocol: mixed_generalization
+
+train:
+  endpoint: tcp://127.0.0.1:5561
+  size: 64
+  # Run a complete five-life game whenever possible. Five lost lives or a
+  # cleared board normally switches the level; 500 is only a safety boundary
+  # for an unusually long or stalled game.
+  max_episode_steps: 500
+  initial_lives: 5
+  max_task_life_losses: 5
+  # Training-only layouts. Each block of three physical tasks visits all
+  # levels once in a newly shuffled order, avoiding sampling imbalance while
+  # preventing the world model from exploiting a fixed level sequence.
+  levels: [1, 3, 4]
+  level_strategy: shuffled_cycle
+  timeout_ms: 30000
+  # Match DIAMOND's Atari training convention: a life loss closes the
+  # dataset/model episode, but the same browser task continues from its
+  # current state without a physical reset.
+  done_on_life_loss: true
+
+test:
+  # Training-time validation only. It uses the training layouts and two fixed
+  # seeds, and therefore cannot leak either held-out layout into model or
+  # hyperparameter selection. A separate browser is mandatory.
+  endpoint: tcp://127.0.0.1:5562
+  size: ${..train.size}
+  max_episode_steps: 100
+  initial_lives: 3
+  max_task_life_losses: null
+  levels: [1, 3, 4]
+  level_strategy: cycle
+  # Three levels x two fixed seeds = six balanced validation tasks.
+  game_seeds: [4242, 9001]
+  timeout_ms: ${..train.timeout_ms}
+  # Atari evaluation runs through all remaining lives.
+  done_on_life_loss: false
+
+# Reserved final blind-test protocol. Trainer never constructs or collects
+# from this section; Level 2/5 remain untouched until the final evaluator is
+# implemented and all design choices/checkpoint rules have been frozen.
+heldout_test:
+  levels: [2, 5]
+  game_seeds: [42, 123, 2025, 31415, 271828]
+  max_episode_steps: 100
+  initial_lives: 3
+
+keymap: gameworld/05_breakout

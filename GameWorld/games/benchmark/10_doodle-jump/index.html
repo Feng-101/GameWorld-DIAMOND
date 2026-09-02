@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+  <head>
+<!-- [DETERMINISTIC_RANDOM] -->
+<script>
+// [DETERMINISTIC_RANDOM] Seeded randomness + time for reproducible gameplay
+(function() {
+    'use strict';
+    var SEED = (42 >>> 0);
+    function mulberry32(s) {
+        return function() {
+            s |= 0; s = s + 0x6D2B79F5 | 0;
+            var t = Math.imul(s ^ s >>> 15, 1 | s);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    function makeRng(seed) {
+        return mulberry32(seed >>> 0);
+    }
+
+    var rng = makeRng(SEED);
+    var rngCrypto = makeRng(SEED ^ 0x9E3779B9);
+
+    var originalRandom = Math.random;
+    Math.random = function() { return rng(); };
+
+    var originalCrypto = window.crypto || window.msCrypto || null;
+    var originalGetRandomValues = originalCrypto && originalCrypto.getRandomValues
+        ? originalCrypto.getRandomValues.bind(originalCrypto)
+        : null;
+    var originalRandomUUID = originalCrypto && originalCrypto.randomUUID
+        ? originalCrypto.randomUUID.bind(originalCrypto)
+        : null;
+
+    function fillRandomBytes(typedArray) {
+        for (var i = 0; i < typedArray.length; i++) {
+            typedArray[i] = (rngCrypto() * 256) | 0;
+        }
+        return typedArray;
+    }
+
+    function toHex(byte) {
+        var hex = byte.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }
+
+    function randomUUID() {
+        var bytes = new Uint8Array(16);
+        fillRandomBytes(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        return (
+            toHex(bytes[0]) + toHex(bytes[1]) + toHex(bytes[2]) + toHex(bytes[3]) + '-' +
+            toHex(bytes[4]) + toHex(bytes[5]) + '-' +
+            toHex(bytes[6]) + toHex(bytes[7]) + '-' +
+            toHex(bytes[8]) + toHex(bytes[9]) + '-' +
+            toHex(bytes[10]) + toHex(bytes[11]) + toHex(bytes[12]) + toHex(bytes[13]) +
+            toHex(bytes[14]) + toHex(bytes[15])
+        );
+    }
+
+    function ensureCrypto() {
+        if (window.crypto) {
+            return window.crypto;
+        }
+        if (window.msCrypto) {
+            return window.msCrypto;
+        }
+        try {
+            window.crypto = {};
+            return window.crypto;
+        } catch (e) {
+            return {};
+        }
+    }
+
+    var cryptoObj = ensureCrypto();
+    try {
+        cryptoObj.getRandomValues = function(typedArray) {
+            if (!typedArray || typeof typedArray.length !== 'number') {
+                throw new TypeError('Expected typed array');
+            }
+            return fillRandomBytes(typedArray);
+        };
+    } catch (e) {}
+    try {
+        cryptoObj.randomUUID = randomUUID;
+    } catch (e) {}
+    try {
+        if (window.msCrypto && window.msCrypto !== cryptoObj) {
+            window.msCrypto = cryptoObj;
+        }
+    } catch (e) {}
+
+    function wrapSeedrandom(fn) {
+        if (typeof fn !== 'function') {
+            return fn;
+        }
+        var wrapped = function(seed, options) {
+            if (seed === undefined || seed === null || seed === '') {
+                seed = String(SEED);
+            }
+            return fn.call(this, seed, options);
+        };
+        for (var key in fn) {
+            try {
+                wrapped[key] = fn[key];
+            } catch (e) {}
+        }
+        return wrapped;
+    }
+
+    function hookSeedrandom(target, prop) {
+        var current = target[prop];
+        if (typeof current === 'function') {
+            current = wrapSeedrandom(current);
+            try {
+                target[prop] = current;
+            } catch (e) {}
+        }
+        try {
+            Object.defineProperty(target, prop, {
+                configurable: true,
+                get: function() { return current; },
+                set: function(fn) { current = wrapSeedrandom(fn); }
+            });
+        } catch (e) {}
+    }
+
+    hookSeedrandom(Math, 'seedrandom');
+    hookSeedrandom(window, 'seedrandom');
+
+    window.__resetRandom = function() {
+        rng = makeRng(SEED);
+        rngCrypto = makeRng(SEED ^ 0x9E3779B9);
+        Math.random = function() { return rng(); };
+    };
+    window.__restoreRandom = function() {
+        Math.random = originalRandom;
+        if (originalCrypto) {
+            if (originalGetRandomValues) {
+                originalCrypto.getRandomValues = originalGetRandomValues;
+            }
+            if (originalRandomUUID) {
+                originalCrypto.randomUUID = originalRandomUUID;
+            }
+        }
+    };
+
+    console.log('[DeterministicRandom] Seeded with:', SEED);
+})();
+</script>
+<!-- [DETERMINISTIC_RANDOM] -->
+
+<meta charset="utf-8">
+    <title>Doodle Jump</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container">
+      <canvas id="canvas">Aww, your browser doesn't support HTML5!</canvas>
+      <div id="mainMenu">
+        <h1>doodle jump</h1>
+        <h3>using HTML5,</h3>
+        <h3>HTML5 browser edition</h3>
+        <p class="info">use <span class="key left">←</span> <span class="key right">→</span> to move and space to (re) start...</p>
+        <a class="button" href="javascript:init()">Play</a>
+      </div>
+      <div id="gameOverMenu">
+        <h1>game over!</h1>
+        <h3 id="go_score">you scored 0 points</h3>
+        <a class="button" href="javascript:reset()">Restart</a>
+      </div>
+      <img id="sprite" src="sprites.png"/>
+      <div id="scoreBoard">
+        <p id="score">0</p>
+      </div>
+    </div>
+    <script src="main.js"></script>
+    <script src="game_api.js"></script>
+</body>
+</html>

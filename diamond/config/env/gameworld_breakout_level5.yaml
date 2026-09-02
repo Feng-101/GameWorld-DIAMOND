@@ -1,0 +1,42 @@
+kind: gameworld_breakout
+protocol: level5_specialist
+
+# A single-layout environment for the Atari-like DIAMOND control experiment.
+# Dedicated RPC/browser ports let this experiment coexist with the mixed-level
+# services without either collector resetting the other model's browser.
+train:
+  endpoint: tcp://127.0.0.1:5571
+  size: 64
+  # Five lives normally end a task first; 500 is only a safety boundary.
+  max_episode_steps: 500
+  initial_lives: 5
+  max_task_life_losses: 5
+  levels: [5]
+  level_strategy: cycle
+  timeout_ms: 30000
+  # Match DIAMOND Atari training: life loss terminates the recurrent/model
+  # episode while the same physical game continues until all lives are gone.
+  done_on_life_loss: true
+
+test:
+  endpoint: tcp://127.0.0.1:5572
+  size: ${..train.size}
+  max_episode_steps: 500
+  initial_lives: 5
+  max_task_life_losses: 5
+  levels: [5]
+  level_strategy: cycle
+  # Four deterministic games match DIAMOND's four periodic test episodes.
+  # The final 100-episode evaluation repeats this four-seed grid 25 times.
+  game_seeds: [4242, 9001, 2025, 31415]
+  timeout_ms: ${..train.timeout_ms}
+  # Match Atari evaluation: a lost life alone is not an episode boundary;
+  # success, five exhausted lives, or the 500-step safety cap ends the game.
+  done_on_life_loss: false
+
+# Level 5 is deliberately trained rather than held out in this control
+# experiment. It must remain logically separate from the 1/3/4 generalization
+# experiment, whose blind Level 2/5 protocol is unchanged.
+heldout_test: null
+
+keymap: gameworld/05_breakout

@@ -1,0 +1,43 @@
+# Machine-specific browser and compiler caches
+.playwright-browsers/
+.torchinductor/
+**/.torchinductor/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+*.py[cod]
+
+# Local environments and editor state
+.venv/
+venv/
+.env
+.vscode/
+.idea/
+
+# Training products and telemetry (archive separately)
+runtime_logs/
+tmp/
+diamond/results/
+**/wandb/
+world_model_checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.mp4
+*.avi
+*.gif
+
+# Runtime scratch/output
+*.pid
+*.log
+*.tmp
+preprocess_preview/
+gameworld_crop_check/
+world_model_visualizations/
+real_agent_evaluations/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini

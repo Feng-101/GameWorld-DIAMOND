@@ -1,0 +1,57 @@
+# @package _global_
+
+# A deliberately tiny end-to-end run. It validates collection, dataset writes,
+# world-model losses, imagined actor-critic updates, and checkpointing. It is
+# not a performance experiment.
+gameworld:
+  imagination_horizon: 10
+
+collection:
+  train:
+    num_steps_total: 64
+    first_epoch:
+      min: 32
+      max: 32
+      threshold_rew: 0
+    steps_per_epoch: 32
+  test:
+    num_episodes: 1
+    num_final_episodes: 1
+
+training:
+  num_final_epochs: 0
+  cache_in_ram: false
+  num_workers_data_loaders: 0
+  model_free: false
+  compile_wm: false
+
+evaluation:
+  should: false
+
+checkpointing:
+  save_agent_every: 1
+  num_to_keep: 1
+
+world_model_env:
+  horizon: ${gameworld.imagination_horizon}
+  num_batches_to_preload: 1
+
+denoiser:
+  training:
+    steps_first_epoch: 1
+    steps_per_epoch: 1
+    batch_size: 2
+
+rew_end_model:
+  training:
+    steps_first_epoch: 1
+    steps_per_epoch: 1
+    batch_size: 2
+
+actor_critic:
+  training:
+    steps_first_epoch: 1
+    steps_per_epoch: 1
+    batch_size: 2
+  actor_critic_loss:
+    backup_every: ${gameworld.imagination_horizon}

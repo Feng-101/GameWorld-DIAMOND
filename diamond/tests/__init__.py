@@ -1,0 +1,2 @@
+"""DIAMOND integration tests."""
+

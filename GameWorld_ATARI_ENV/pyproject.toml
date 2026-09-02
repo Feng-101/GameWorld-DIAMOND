@@ -1,0 +1,18 @@
+[project]
+name = "gameworld-atari-env"
+version = "0.2.0"
+description = "Deterministic Atari-style browser Breakout environment for DIAMOND"
+requires-python = ">=3.12"
+dependencies = [
+    "pillow==10.3.0",
+    "playwright==1.45.0",
+    "pyzmq==26.0.3",
+    "tornado>=6.1,<7; sys_platform == 'win32'",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["env*", "tools*"]

@@ -1,0 +1,43 @@
+# @package _global_
+
+# Short paired run used only to compare imagination horizons 10 and 15.
+# Keep the seed and every setting other than gameworld.imagination_horizon
+# identical across the two runs. Level 2/5 remain untouched.
+
+common:
+  seed: 20260715
+
+gameworld:
+  imagination_horizon: 10
+
+collection:
+  train:
+    num_steps_total: 20000
+    first_epoch:
+      min: 5000
+      max: 10000
+      threshold_rew: 10
+    steps_per_epoch: 100
+  test:
+    num_episodes: 6
+    num_final_episodes: 6
+
+world_model_env:
+  horizon: ${gameworld.imagination_horizon}
+
+actor_critic:
+  actor_critic_loss:
+    backup_every: ${gameworld.imagination_horizon}
+
+training:
+  num_final_epochs: 10
+  compile_wm: false
+
+checkpointing:
+  # Keep only epoch 100 plus the forced final epoch in this short probe.
+  save_agent_every: 100
+  num_to_keep: 4
+
+evaluation:
+  should: true
+  every: 50

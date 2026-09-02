@@ -1,0 +1,36 @@
+kind: gameworld_atari_breakout
+protocol: atari_single_level
+
+# One specialist layout only. Override with ``env.level=1`` through
+# ``env.level=5``; train and test always resolve to the same selected level.
+level: 5
+
+train:
+  endpoint: tcp://127.0.0.1:5661
+  size: 64
+  max_episode_steps: null
+  initial_lives: 5
+  max_task_life_losses: 5
+  levels:
+    - ${...level}
+  timeout_ms: 30000
+  # Match DIAMOND Atari training: reset the recurrent state at an intermediate
+  # life loss, while continuing the same physical five-life browser game.
+  done_on_life_loss: true
+
+test:
+  endpoint: tcp://127.0.0.1:5662
+  size: ${..train.size}
+  max_episode_steps: null
+  initial_lives: 5
+  max_task_life_losses: 5
+  levels:
+    - ${...level}
+  # Periodic validation runs complete five-life games on a fixed seed cycle.
+  game_seeds: [4242, 9001, 2025, 31415]
+  timeout_ms: ${..train.timeout_ms}
+  # Match Atari evaluation: an intermediate lost life does not end the game.
+  done_on_life_loss: false
+
+heldout_test: null
+keymap: gameworld_atari_breakout

@@ -1,0 +1,27 @@
+[project]
+name = "gameworld"
+version = "0.0.1"
+description = "GameWorld game agent benchmark runtime"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic",
+    "colorlog",
+    "cryptography==42.0.8",
+    "google-genai",
+    "jinja2>=3.1",
+    "openai",
+    "pillow==10.3.0",
+    "playwright==1.45.0",
+    "pyzmq==26.0.3",
+    "pyyaml>=6.0",
+    "requests==2.31.0",
+    "zai-sdk",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
